@@ -3,10 +3,12 @@ import { productStore } from "../stores";
 import { router, withLifecycle } from "../router";
 import { loadProducts, loadProductsAndCategories } from "../services";
 import { PageWrapper } from "./PageWrapper.js";
+import { getProducts, getCategories } from "../api/productApi.js";
 
 export const HomePage = withLifecycle(
   {
     onMount: () => {
+      if (productStore.getState().status === "done") return;
       loadProductsAndCategories();
     },
     watches: [
@@ -17,8 +19,8 @@ export const HomePage = withLifecycle(
       () => loadProducts(true),
     ],
   },
-  () => {
-    const productState = productStore.getState();
+  (serversideProps) => {
+    const productState = serversideProps || productStore.getState();
     const { search: searchQuery, limit, sort, category1, category2 } = router.query;
     const { products, loading, error, totalCount, categories } = productState;
     const category = { category1, category2 };
@@ -48,3 +50,14 @@ export const HomePage = withLifecycle(
     });
   },
 );
+
+HomePage.loader = async () => {
+  const [
+    {
+      products,
+      pagination: { totalPages },
+    },
+    categories,
+  ] = await Promise.all([getProducts(router.query), getCategories()]);
+  return { products, totalPages, categories };
+};

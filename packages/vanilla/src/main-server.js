@@ -1,5 +1,10 @@
 import { HomePage, ProductDetailPage, NotFoundPage } from "./pages";
 import { router } from "./router";
+import { server } from "./mocks/server";
+
+server.listen({
+  onUnhandledRequest: "bypass",
+});
 
 export const render = async (url) => {
   // 라우트 등록
@@ -12,9 +17,11 @@ export const render = async (url) => {
   router.start();
 
   const PageComponent = router.target;
+  const data = await PageComponent.loader?.();
 
   return {
     head: "",
-    html: PageComponent,
+    html: () => PageComponent(data),
+    data,
   };
 };
